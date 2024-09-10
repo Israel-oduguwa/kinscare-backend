@@ -514,7 +514,6 @@ const extractMentions = (content) => {
 
 // Week 2 and 3 
 
-
 // The User InterFace Building 
 
 
@@ -522,9 +521,10 @@ const extractMentions = (content) => {
 
 
 
+
+
+
 // Updates and Deleting of Posts and thread 
-
-
 /**
  * Updates an existing thread created by a user
  * @param {Object} req - The request object
