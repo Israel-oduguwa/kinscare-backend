@@ -1,0 +1,44 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "start:dev": "nodemon --exec babel-node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.637.0",
+    "@aws-sdk/lib-storage": "^3.637.0",
+    "axios": "^1.7.5",
+    "cors": "^2.8.5",
+    "customerio-node": "^4.1.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jwt-decode": "^4.0.0",
+    "mixpanel": "^0.18.0",
+    "mongodb": "^6.8.0",
+    "multer": "^1.4.5-lts.1",
+    "multer-s3": "^2.10.0",
+    "sanitize-html": "^2.13.0",
+    "stripe": "^16.8.0",
+    "twilio": "^5.2.3",
+    "uuid": "^10.0.0",
+    "vwo-node-sdk": "^1.70.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.24.8",
+    "@babel/core": "^7.25.2",
+    "@babel/node": "^7.25.0",
+    "@babel/plugin-proposal-class-properties": "^7.18.6",
+    "@babel/plugin-proposal-object-rest-spread": "^7.20.7",
+    "@babel/preset-env": "^7.25.4",
+    "nodemon": "^3.1.4",
+    "rimraf": "^6.0.1"
+  }
+}
