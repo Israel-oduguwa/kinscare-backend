@@ -34,8 +34,8 @@ app.use('/api/v1/forum', forumRoutes)
 app.use('/api/v1', uploadFiles)
 app.use('/api/v1/', deleteFiles)
 
-app.get("/health", (req, res) => {
-    res.send("health Check Latest"); 
+app.get("/", (req, res) => {
+    res.send("health Check, the server is healthy"); 
 });
 
 
