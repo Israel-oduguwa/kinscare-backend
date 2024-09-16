@@ -13,8 +13,9 @@ import {
     updatePost,
     deletePost,
     updateReply,
-    voteOnItem,
-    removeVoteOnItem,
+    likeItem,
+    checkIfUserLikedItem,
+    removeLikeFromItem,
     deleteReply,
 } from "../Forum/ForumFunctionsV2.js"
 const router = Router()
@@ -40,9 +41,9 @@ router.put('/replies/:replyId', updateReply); // Edit a reply
 router.post('/replies/:replyId', deleteReply); // Delete a reply
 
 // Voting routes
-router.post('/vote/:itemId', voteOnItem); // Vote on a thread, post, or reply
-router.delete('/vote/:itemId', removeVoteOnItem); // Remove a vote from a thread, post, or reply
-
-
+// Routes for liking and removing likes
+router.post('/like/:itemType/:itemId', likeItem); // Like an item
+router.post('/like/:itemType/:itemId/remove', removeLikeFromItem); // Remove a like from an item
+router.get('/like/:itemType/:itemId/:userID', checkIfUserLikedItem); // Check if user has liked an item
 
 export default router

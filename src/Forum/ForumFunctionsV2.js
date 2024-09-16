@@ -173,87 +173,87 @@ export const replyToPostInThread = async (req, res) => {
  * @param {Object} req - The request object
  * @param {Object} res - The response object
  */
-export const getThreads = async (req, res) => {
-    try {
-        const threads = db.collection('threads');
-        const { filter, sort, category, tag, status, page = 1, limit = 10 } = req.query;
+// export const getThreads = async (req, res) => {
+//     try {
+//         const threads = db.collection('threads');
+//         const { filter, sort, category, tag, status, page = 1, limit = 10 } = req.query;
 
-        // Build the query object based on provided filters
-        const query = {};
-        if (filter) query.title = { $regex: filter, $options: 'i' }; // Case-insensitive title search
-        if (category) query.categories = category;
-        if (tag) query.tags = tag;
-        if (status) query.status = status;
+//         // Build the query object based on provided filters
+//         const query = {};
+//         if (filter) query.title = { $regex: filter, $options: 'i' }; // Case-insensitive title search
+//         if (category) query.categories = category;
+//         if (tag) query.tags = tag;
+//         if (status) query.status = status;
 
-        // Determine the sort order
-        const sortOption = sort === 'most_replied' ? { replies: -1 } : { createdAt: -1 };
+//         // Determine the sort order
+//         const sortOption = sort === 'most_replied' ? { replies: -1 } : { createdAt: -1 };
 
-        // Build the aggregation pipeline
-        const pipeline = [
-            { $match: query }, // Apply filters
-            { $sort: sortOption }, // Apply sorting
-            {
-                $addFields: {
-                    creatorString: { $toString: "$creator" } // Convert ObjectId to string
-                }
-            },
-            {
-                $lookup: {
-                    from: 'users', // The collection name where user information is stored
-                    localField: 'creatorString', // The field in 'threads' collection that contains the user ID
-                    foreignField: 'userID', // The field in 'users' collection that contains the user ID
-                    as: 'creator' // The name of the field to add to each output document
-                }
-            },
+//         // Build the aggregation pipeline
+//         const pipeline = [
+//             { $match: query }, // Apply filters
+//             { $sort: sortOption }, // Apply sorting
+//             {
+//                 $addFields: {
+//                     creatorString: { $toString: "$creator" } // Convert ObjectId to string
+//                 }
+//             },
+//             {
+//                 $lookup: {
+//                     from: 'users', // The collection name where user information is stored
+//                     localField: 'creatorString', // The field in 'threads' collection that contains the user ID
+//                     foreignField: 'userID', // The field in 'users' collection that contains the user ID
+//                     as: 'creator' // The name of the field to add to each output document
+//                 }
+//             },
 
-            {
-                $unwind: {
-                    path: '$creator',
-                    preserveNullAndEmptyArrays: true // Keep threads even if no user information is found
-                }
-            },
-            {
-                $facet: {
-                    metadata: [{ $count: "total" }, { $addFields: { page: Number(page), limit: Number(limit) } }],
-                    data: [{ $skip: (Number(page) - 1) * Number(limit) }, { $limit: Number(limit) }]
-                }
-            }
-        ];
+//             {
+//                 $unwind: {
+//                     path: '$creator',
+//                     preserveNullAndEmptyArrays: true // Keep threads even if no user information is found
+//                 }
+//             },
+//             {
+//                 $facet: {
+//                     metadata: [{ $count: "total" }, { $addFields: { page: Number(page), limit: Number(limit) } }],
+//                     data: [{ $skip: (Number(page) - 1) * Number(limit) }, { $limit: Number(limit) }]
+//                 }
+//             }
+//         ];
 
-        // Execute the aggregation
-        const result = await threads.aggregate(pipeline).toArray();
+//         // Execute the aggregation
+//         const result = await threads.aggregate(pipeline).toArray();
 
-        // Extract metadata and data from the result
-        const metadata = result[0].metadata[0] || { total: 0, page, limit };
-        const data = result[0].data;
+//         // Extract metadata and data from the result
+//         const metadata = result[0].metadata[0] || { total: 0, page, limit };
+//         const data = result[0].data;
 
-        // Map over data to format the creator object
-        const formattedData = data.map(thread => ({
-            ...thread,
-            creator: thread.creator ? {
-                userID: thread.creator.userID,
-                complete: thread.creator.complete,
-                fname: thread.creator.fname,
-                lname: thread.creator.lname
-            } : null
-        }));
+//         // Map over data to format the creator object
+//         const formattedData = data.map(thread => ({
+//             ...thread,
+//             creator: thread.creator ? {
+//                 userID: thread.creator.userID,
+//                 complete: thread.creator.complete,
+//                 fname: thread.creator.fname,
+//                 lname: thread.creator.lname
+//             } : null
+//         }));
 
-        // Send the response with pagination info
-        res.status(200).json({
-            success: true,
-            data: formattedData,
-            pagination: {
-                total: metadata.total,
-                page: metadata.page,
-                limit: metadata.limit,
-                pages: Math.ceil(metadata.total / metadata.limit)
-            }
-        });
-    } catch (error) {
-        console.error('Error retrieving threads:', error);
-        res.status(500).json({ success: false, message: 'Failed to retrieve threads.' });
-    }
-};
+//         // Send the response with pagination info
+//         res.status(200).json({
+//             success: true,
+//             data: formattedData,
+//             pagination: {
+//                 total: metadata.total,
+//                 page: metadata.page,
+//                 limit: metadata.limit,
+//                 pages: Math.ceil(metadata.total / metadata.limit)
+//             }
+//         });
+//     } catch (error) {
+//         console.error('Error retrieving threads:', error);
+//         res.status(500).json({ success: false, message: 'Failed to retrieve threads.' });
+//     }
+// };
 
 /**
  * Retrieves a specific thread by its ID, including all its posts
@@ -272,7 +272,7 @@ export const getThreadById = async (req, res) => {
 
         // Find the thread by its ID
         const thread = await threads.findOne({ _id: new ObjectId(threadId) });
-
+        console.log(thread)
         // If the thread doesn't exist, return a 404 error
         if (!thread) {
             return res.status(404).json({ success: false, message: 'Thread not found' });
@@ -598,6 +598,8 @@ export const deleteThread = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Permission denied. Only the creator can delete this thread.' });
         }
 
+        // check the likes under the thread and delete them 
+
         // Delete all posts and replies associated with the thread
         await posts.deleteMany({ threadId: new ObjectId(threadId) });
 
@@ -778,86 +780,298 @@ export const deleteReply = async (req, res) => {
 
 // Voting in Posts and comments 
 
-/**
- * Votes on an item (thread, post, or reply)
- * @param {Object} req - The request object
- * @param {Object} res - The response object
- */
-export const voteOnItem = async (req, res) => {
-    const { itemId } = req.params; // Extract the item ID from the route parameters
-    const { userID, type } = req.body; // Extract user ID and type ('upvote' or 'downvote')
-
+export const likeItem = async (req, res) => {
+    const { itemId, itemType } = req.params; // Extract the item ID and type from the route parameters
+    const { userID } = req.body; // Extract user ID from the request body
+    console.log(userID, itemType, itemId)
     try {
-        const items = db.collection('items'); // Generic collection reference
-        const item = await items.findOne({ _id: new ObjectId(itemId) });
+        const collection = getCollectionForItemType(itemType); // Determine the collection based on the item type
 
-        if (!item) {
-            return res.status(404).json({ success: false, message: 'Item not found.' });
+        if (!collection) {
+            return res.status(400).json({ success: false, message: 'Invalid item type.' });
         }
 
-        // Check if the user has already voted on this item
-        const existingVote = await items.findOne({ _id: new ObjectId(itemId), 'votes.userID': userID });
+        // Check if the user has already liked this item
+        const likeExists = await db.collection('likes').findOne({ itemId, userID });
+        // console.log(likeExists)
 
-        if (existingVote) {
-            return res.status(400).json({ success: false, message: 'User has already voted on this item.' });
+        if (likeExists) {
+            return res.status(400).json({ success: false, message: 'User has already liked this item.' });
         }
 
-        // Update the item with the new vote
-        const voteField = type === 'upvote' ? 'upvotes' : 'downvotes';
-
-        await items.updateOne(
+        // Add the user's like to the item
+        await collection.updateOne(
             { _id: new ObjectId(itemId) },
-            {
-                $push: { votes: { userID, type } },
-                $inc: { [voteField]: 1 }
-            }
+            { $push: { likes: userID }, $inc: { likesCount: 1 } } // Increment the likes count
         );
 
-        res.status(200).json({ success: true, message: `Item ${type}d successfully.` });
+        // Track the like in the 'likes' collection
+        await db.collection('likes').insertOne({
+            userID,
+            itemId,
+            itemType,
+            createdAt: new Date()
+        });
+        res.status(200).json({ success: true, message: 'Item liked successfully.' });
     } catch (error) {
-        console.error('Error voting on item:', error);
-        res.status(500).json({ success: false, message: 'Failed to vote on item.' });
+        console.error('Error liking item:', error);
+        res.status(500).json({ success: false, message: 'Failed to like item.' });
     }
 };
 
+
 /**
- * Removes a vote from an item (thread, post, or reply)
+ * Removes a like from an item (thread, post, or reply)
  * @param {Object} req - The request object
  * @param {Object} res - The response object
  */
-export const removeVoteOnItem = async (req, res) => {
-    const { itemId } = req.params; // Extract the item ID from the route parameters
-    const { userID } = req.body; // Extract user ID
+
+export const removeLikeFromItem = async (req, res) => {
+    const { itemId, itemType } = req.params; // Extract the item ID and type from the route parameters
+    const { userID } = req.body; // Extract user ID from the request body
 
     try {
-        const items = db.collection('items'); // Generic collection reference
-        const item = await items.findOne({ _id: new ObjectId(itemId) });
+        const collection = getCollectionForItemType(itemType); // Determine the collection based on the item type
 
-        if (!item) {
-            return res.status(404).json({ success: false, message: 'Item not found.' });
+        if (!collection) {
+            return res.status(400).json({ success: false, message: 'Invalid item type.' });
         }
 
-        // Check if the user has voted on this item
-        const userVote = item.votes.find(vote => vote.userID === userID);
-
-        if (!userVote) {
-            return res.status(400).json({ success: false, message: 'User has not voted on this item.' });
-        }
-
-        // Update the item by removing the vote
-        const voteField = userVote.type === 'upvote' ? 'upvotes' : 'downvotes';
-
-        await items.updateOne(
+        // Remove the user's like from the item
+        const result = await collection.updateOne(
             { _id: new ObjectId(itemId) },
-            {
-                $pull: { votes: { userID } },
-                $inc: { [voteField]: -1 }
-            }
+            { $pull: { likes: userID }, $inc: { likesCount: -1 } } // Decrement the likes count
         );
 
-        res.status(200).json({ success: true, message: 'Vote removed successfully.' });
+        if (result.modifiedCount === 0) {
+            return res.status(400).json({ success: false, message: 'Like not found or already removed.' });
+        }
+
+        // Remove the like from the 'likes' collection
+        await db.collection('likes').deleteOne({ itemId, userID });
+
+        res.status(200).json({ success: true, message: 'Like removed successfully.' });
     } catch (error) {
-        console.error('Error removing vote on item:', error);
-        res.status(500).json({ success: false, message: 'Failed to remove vote on item.' });
+        console.error('Error removing like from item:', error);
+        res.status(500).json({ success: false, message: 'Failed to remove like from item.' });
     }
 };
+
+export const checkIfUserLikedItem = async (req, res) => {
+    const { itemId, itemType, userID } = req.params; // Extract the item ID, type, and user ID from the route parameters
+    // console.log(itemId, itemType, userID)
+    try {
+        // Validate item type
+        const validItemTypes = ['thread', 'post', 'reply'];
+        if (!validItemTypes.includes(itemType)) {
+            return res.status(400).json({ success: false, message: 'Invalid item type.' });
+        }
+        console.log()
+        // Check if the like exists in the 'likes' collection
+        const likeExists = await db.collection('likes').findOne({ itemId, userID, itemType });
+        console.log(likeExists)
+        if (likeExists) {
+            return res.status(200).json({ success: true, liked: true }); // User has liked the item
+        } else {
+            return res.status(200).json({ success: true, liked: false }); // User has not liked the item
+        }
+    } catch (error) {
+        console.error('Error checking if user liked item:', error);
+        res.status(500).json({ success: false, message: 'Failed to check if user liked item.' });
+    }
+};
+/**
+ * Helper function to determine the correct collection based on the item type
+ * @param {string} itemType - The type of the item ('thread', 'post', 'reply')
+ * @returns {Object} The MongoDB collection reference
+ */
+function getCollectionForItemType(itemType) {
+    switch (itemType) {
+        case 'thread':
+            return db.collection('threads');
+        case 'post':
+            return db.collection('posts');
+        case 'reply':
+            return db.collection('replies');
+        default:
+            return null; // Invalid item type
+    }
+}
+
+
+
+
+// Query 
+
+export const getThreads = async (req, res) => {
+    try {
+        // Connect to the DB
+        const { db } = await connectToDatabase();
+        const threadsCollection = db.collection('threads');
+
+        // Get query parameters from request
+        const { categories, tags, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc', sortReplies } = req.query;
+        // console.log(sortReplies)
+        // Convert page and limit to numbers
+        const pageNum = Number(page);
+        const limitNum = Number(limit);
+
+        // Build the match query for categories and tags
+        const matchQuery = {};
+
+        if (categories) {
+            // If there are multiple categories, split them into an array and match against the categories array field
+            const categoriesArray = categories.split(',');
+            matchQuery.categories = { $in: categoriesArray };
+        }
+
+        if (tags) {
+            // If there are multiple tags, split them into an array and match against the tags array field
+            const tagsArray = tags.split(',');
+            matchQuery.tags = { $in: tagsArray };
+        }
+
+        // Sorting criteria based on sortBy and sortOrder query params
+        const sortOptions = {};
+
+        if (sortReplies) {
+            // If sorting by replies, use it directly
+            sortOptions.replies = sortReplies === 'most' ? -1 : 1; // Sort by most or least replies
+        } else {
+            sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1; // Default sorting by other fields (like createdAt, views, etc.)
+        }
+
+        // Aggregation pipeline
+        const pipeline = [
+            { $match: matchQuery },
+            { $sort: sortOptions },
+            {
+                $addFields: {
+                    creatorString: { $toString: "$creator" } // Convert ObjectId to string for lookup
+                }
+            },
+            {
+                $lookup: {
+                    from: 'users', // The collection name where user information is stored
+                    localField: 'creatorString', // The field in 'threads' collection that contains the user ID
+                    foreignField: 'userID', // The field in 'users' collection that contains the user ID
+                    as: 'creator' // The name of the field to add to each output document
+                }
+            },
+            {
+                $unwind: {
+                    path: '$creator',
+                    preserveNullAndEmptyArrays: true // Keep threads even if no user information is found
+                }
+            },
+            {
+                $facet: {
+                    metadata: [
+                        { $count: "total" }, // Get the total count of matching documents
+                        { $addFields: { page: pageNum, limit: limitNum } }
+                    ],
+                    data: [
+                        { $skip: (pageNum - 1) * limitNum },
+                        { $limit: limitNum } // Paginated data
+                    ]
+                }
+            }
+        ];
+        // console.log(JSON.stringify(pipeline))
+
+        // Execute the aggregation
+        const result = await threadsCollection.aggregate(pipeline).toArray();
+
+        // Extract metadata and data from the result
+        const metadata = result[0].metadata[0] || { total: 0, page: pageNum, limit: limitNum };
+        const threads = result[0].data;
+
+        // If no threads are found, fallback behavior: fetch all threads (no filters)
+        if (threads.length === 0) {
+            const fallbackPipeline = [
+                { $sort: sortOptions },
+                {
+                    $addFields: {
+                        creatorString: { $toString: "$creator" } // Convert ObjectId to string for lookup
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'users', // The collection name where user information is stored
+                        localField: 'creatorString', // The field in 'threads' collection that contains the user ID
+                        foreignField: 'userID', // The field in 'users' collection that contains the user ID
+                        as: 'creator' // The name of the field to add to each output document
+                    }
+                },
+                {
+                    $unwind: {
+                        path: '$creator',
+                        preserveNullAndEmptyArrays: true // Keep threads even if no user information is found
+                    }
+                },
+                {
+                    $facet: {
+                        metadata: [
+                            { $count: "total" },
+                            { $addFields: { page: pageNum, limit: limitNum } }
+                        ],
+                        data: [
+                            { $skip: (pageNum - 1) * limitNum },
+                            { $limit: limitNum }
+                        ]
+                    }
+                }
+            ];
+
+            const fallbackResult = await threadsCollection.aggregate(fallbackPipeline).toArray();
+            const fallbackMetadata = fallbackResult[0].metadata[0] || { total: 0, page: pageNum, limit: limitNum };
+            const fallbackThreads = fallbackResult[0].data;
+
+            return res.status(200).json({
+                success: true,
+                threads: fallbackThreads,
+                fallback: true,
+                pagination: {
+                    total: fallbackMetadata.total,
+                    page: fallbackMetadata.page,
+                    limit: fallbackMetadata.limit,
+                    pages: Math.ceil(fallbackMetadata.total / fallbackMetadata.limit)
+                }
+            });
+        }
+
+        // Send response with pagination info for filtered threads
+        res.status(200).json({
+            success: true,
+            threads,
+            fallback: false,
+            pagination: {
+                total: metadata.total,
+                page: metadata.page,
+                limit: metadata.limit,
+                pages: Math.ceil(metadata.total / metadata.limit)
+            }
+        });
+    } catch (error) {
+        console.error('Error retrieving threads:', error);
+        res.status(500).json({ success: false, message: 'Failed to retrieve threads.' });
+    }
+};
+
+// if (sort) {
+//     switch (sort) {
+//         case 'createdAt':
+//             sortOptions = { createdAt: -1 }; // Sort by creation date, newest first
+//             break;
+//         case "updatedAt":
+//             sortOptions = { updatedAt: -1 };// soe
+//         case 'replies':
+//             sortOptions = { replies: -1 }; // Sort by the number of replies, descending
+//             break;
+//         case 'views':
+//             sortOptions = { views: -1 }; // Sort by views, descending
+//             break;
+//         default:
+//             break;
+//     }
+// }
