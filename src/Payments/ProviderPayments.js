@@ -62,7 +62,7 @@ export const createSetupIntent = async (req, res) => {
       // Create a subscription with a free trial
       const subscription = await stripe.subscriptions.create({
         customer: customerId,
-        items: [{ price: priceId }],
+        items: [{ price: "price_1QP2OuAoahxG9SLGNoc37Lxo" }],
         trial_period_days: trialPeriodDays, // Add free trial period
         expand: ['latest_invoice.payment_intent'],
       });
