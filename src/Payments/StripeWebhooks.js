@@ -7,7 +7,7 @@ dotenv.config();
 const stripe = new Stripe(process.env.STRIPE_TEST_SECRETE_KEY || "", {
   apiVersion: "2022-11-15",
 });
-const endpointSecret = "whsec_7dfb480c5739b0ae948bb2109702955c66e5880246901179526de42328f06180";
+const endpointSecret = "whsec_YBxJ9Ayi6t8Uh9ZtFNPRhxGjEWoaL6MA";
 
 
 export const handleStripeWebhook = async (req, res) => {
