@@ -37,7 +37,7 @@ router.post('/upload-file', upload.single('file'), async (req, res) => {
             return res.status(400).send('No file uploaded');
         }
         const uploadParams = {
-            Bucket: 'fileupload-kinscare',
+            Bucket: 'kinscare-storage',
             Key: file.originalname, // Or generate a unique name
             Body: file.buffer,
             ContentType: file.mimetype,
@@ -48,7 +48,7 @@ router.post('/upload-file', upload.single('file'), async (req, res) => {
             params: uploadParams
         });
         await upload.done();
-        res.json({ message: 'File uploaded successfully', url: `https://fileupload-kinscare.s3.amazonaws.com/${file.originalname}` });
+        res.json({ message: 'File uploaded successfully', url: `https://kinscare-storage.s3.amazonaws.com/${file.originalname}` });
     } catch (err) {
         console.error('Error uploading file:', err);
         res.status(500).json({ error: err.message });

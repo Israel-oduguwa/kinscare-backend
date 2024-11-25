@@ -3,12 +3,16 @@ import emailRoutes from "./src/Routes/emailRoutes.js"
 import forumRoutes from "./src/Routes/forumRoutes.js"
 import uploadFiles from "./src/Routes/uploadFiles.cjs";
 import deleteFiles from "./src/Routes/deleteFile.cjs";
+import AuthRoutes from "./src/Routes/AuthRoutes.js";
+import CaregiverRoutes from "./src/Routes/CaregiverRoutes.js";
+import ProviderRoutes from "./src/Routes/ProviderRoutes.js"
 import cors from "cors";
 import bodyParser from "body-parser"
 const app = express();
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(json())
+
 const allowedOrigins = [
     "https://kinscare.org",
     "http://localhost:3000",
@@ -33,6 +37,16 @@ app.use('/api/v1/forum', forumRoutes)
 // this upload files to s3 bucket 
 app.use('/api/v1', uploadFiles)
 app.use('/api/v1/', deleteFiles)
+
+
+//user authentication 
+app.use('/api/v1/auth', AuthRoutes);
+
+//caregivers 
+app.use('/api/v1/caregivers', CaregiverRoutes)
+
+//providers
+app.use('/api/v1/providers', ProviderRoutes)
 
 app.get("/", (req, res) => {
     res.send("health Check, the server is healthy"); 

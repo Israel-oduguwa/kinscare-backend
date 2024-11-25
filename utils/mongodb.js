@@ -1,6 +1,7 @@
 import { MongoClient } from 'mongodb'
 import 'dotenv/config'
 let uri = process.env.MONGODB_URI;
+// let uri = process.env.MONGODEV; //test db
 let dbName = "kinshealth";
 // mongodb+srv://israeloduguwa:adeboyega@zororo-cluster.ruky4.mongodb.net/kinshealth
 let cachedClient = null
