@@ -6,6 +6,8 @@ import deleteFiles from "./src/Routes/deleteFile.cjs";
 import AuthRoutes from "./src/Routes/AuthRoutes.js";
 import CaregiverRoutes from "./src/Routes/CaregiverRoutes.js";
 import ProviderRoutes from "./src/Routes/ProviderRoutes.js"
+import TwilioRoute from "./src/Routes/TwilioRoute.js"
+import NotificationRoutes from "./src/Routes/NotificationRoutes.js"
 import cors from "cors";
 import bodyParser from "body-parser"
 const app = express();
@@ -32,7 +34,7 @@ app.use(
 // The api and functions 
 
 // Emails 
-app.use('/api/email', emailRoutes);
+app.use('/api/v1/email', emailRoutes);
 app.use('/api/v1/forum', forumRoutes)
 // this upload files to s3 bucket 
 app.use('/api/v1', uploadFiles)
@@ -47,6 +49,12 @@ app.use('/api/v1/caregivers', CaregiverRoutes)
 
 //providers
 app.use('/api/v1/providers', ProviderRoutes)
+
+//twilio
+app.use('/api/v1/twilio', TwilioRoute)
+
+// notification
+app.use('/api/v1/notifications', NotificationRoutes)
 
 app.get("/", (req, res) => {
     res.send("health Check, the server is healthy"); 

@@ -40,8 +40,14 @@ const createHash = (data) => crypto.createHash('md5').update(data).digest('hex')
 
 // Helper function for phone number validation and formatting
 const formatPhoneNumber = (tel) => {
-  const phoneNumber = parsePhoneNumberFromString(tel, 'US');
+  if(tel){
+    const phoneNumber = parsePhoneNumberFromString(tel, 'US');
   return phoneNumber ? phoneNumber.format('E.164') : null;
+  }
+  else{
+    const empty = ""
+    return empty
+  }
 };
 
 // Centralized error handler for missing fields
@@ -71,17 +77,20 @@ export const createUserData = async (req, res, next) => {
       lname,
       userID,
       role,
+      zipcode,
       userIp,
       route,
+      profileImage,
       geocode_address,
       city,
+      verified,
       address,
       otp_hash,
     } = req.body;
 
     // Validate required fields
     validateRequiredFields(req.body, ['email', 'auth_mode', 'userID']);
-
+    console.log(fname)
     // Access collections
     const users = db.collection('users');
     const contacts = db.collection('contacts');
@@ -112,18 +121,23 @@ export const createUserData = async (req, res, next) => {
       email,
       auth_mode,
       userID,
-      tel: formattedTel,
+      tel: tel ? formattedTel: "",
       role,
+      zipcode,
       route,
       created: new Date(),
-      trial: role === 'provider' ? trial : undefined,
+      trial: role === 'provider' ? false : undefined,
       fname: fname || '',
       lname: lname || '',
       otp_hash: auth_mode === 'otp' ? otp_hash : '',
       customer_id, // Add Stripe customer ID here so no matter where the user is coming from customer Id would always be created here
       hash: emailHash,
-      verified: auth_mode === 'oauth2-google' || auth_mode === 'oauth2-facebook',
+      complete:false,
+      verified,
       telVerification: false,
+      signup_route: req.body.signup_route ? req.body.signup_route : "",
+      caregiver_id: req.body.caregiver_id ? req.body.caregiver_id : ""
+
     };
 
     const userObject = {
@@ -138,11 +152,13 @@ export const createUserData = async (req, res, next) => {
       userIp,
       geocode_address: geocode_address ? { type: 'Point', coordinates: geocode_address } : undefined,
       city,
+      zipcode,
       address,
       fname: fname || '',
       lname: lname || '',
       returning: false,
       complete: false,
+      profileImage,
       created: new Date(),
       hash: emailHash,
       customer_id, // Add Stripe customer ID here
@@ -278,7 +294,11 @@ export const deleteUser = async (req, res) => {
 
     // List of emails to delete
     const emailsToDelete = [
-      "apiprovidertesting@gmail.com"
+      "apiprovidertesting@gmail.com",
+      "apicaregivertesting@gmail.com",
+      "oduguwa.israel22@gmail.com",
+      "iaoduguwa@student.oauife.edu.ng",
+      "oauhealth@kinscare.org"
     ];
 
     const deleted = []; // Array to store deleted user details
@@ -309,5 +329,80 @@ export const deleteUser = async (req, res) => {
   } catch (err) {
     console.error('Error:', err);
     res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+export const updateRoleAndTel = async (req, res) => {
+  try {
+    // Ensure the method is POST
+    if (req.method !== "POST") {
+      return res.status(405).json({ success: false, message: "Method Not Allowed" });
+    }
+
+    // Destructure payload from the request body
+    const { userID, email, role, tel, hash, fname, lname } = req.body;
+
+    // Validate input
+    if (!userID || !email || !role || !tel || !hash) {
+      return res.status(400).json({ success: false, message: "Missing required fields in the payload." });
+    }
+
+    // Connect to MongoDB
+    const { db } = await connectToDatabase();
+    const usersCollection = db.collection("users");
+    const contactsCollection = db.collection("contacts");
+
+    // Update the user's role and telephone number in the 'users' collection
+    const userUpdateResult = await usersCollection.updateOne(
+      { hash }, // Filter
+      {
+        $set: {
+          role, // Update the role
+          "auth.tel": tel, // Update the telephone number
+        },
+      },
+      { upsert: true } // Insert if the document doesn't exist
+    );
+
+    let customer_id = null;
+    if (role === 'provider') {
+      try {
+        customer_id = await createStripeCustomer(email, `${fname} ${lname}`);
+      } catch (error) {
+        console.error('Failed to create Stripe customer. Proceeding without it:', error.message);
+      }
+    }
+
+    const updateObject =
+      role === "provider"
+        ? { role, tel, trial: false, customer_id } // Add 'trial: true' for providers
+        : { role, tel };
+
+    // Update the 'contacts' collection
+    const contactsUpdateResult = await contactsCollection.updateOne(
+      { hash }, // Filter
+      { $set: updateObject }, // Set the fields
+      { upsert: true } // Insert if the document doesn't exist
+    );
+
+    // Respond with success if both updates were successful
+    if (userUpdateResult.modifiedCount > 0 || contactsUpdateResult.modifiedCount > 0) {
+      return res.status(200).json({
+        success: true,
+        message: "Role and telephone updated successfully.",
+      });
+    } else {
+      return res.status(200).json({
+        success: true,
+        message: "No changes were made to the documents.",
+      });
+    }
+  } catch (error) {
+    console.error("Error updating role and telephone:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred while updating role and telephone.",
+    });
   }
 };

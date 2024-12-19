@@ -20,7 +20,7 @@ export const fetchJobs = async (req, res, next) => {
         const userData = await db.collection("users").findOne({ userID });
 
         if (!userData) {
-            return res.status(404).json({ message: "User not found" });
+            return res.status(404).json({ message: "User snot found" });
         }
 
         // Check if user has geocode_address with valid coordinates
@@ -476,7 +476,7 @@ export const getAppliedJobs = async (req, res) => {
         // Fetch the jobs that match the extracted job IDs
         const appliedJobs = await jobsCollection
             .find({ _id: { $in: jobIds } })
-            .project({ _id: 1, title: 1, contacts: 1, certifications: 1, licenses: 1, schedule: 1, minHours: 1, compensation: 1, created: 1 })
+            // .project({ _id: 1, title: 1, contacts: 1, certifications: 1, licenses: 1, schedule: 1, minHours: 1, compensation: 1, created: 1, applied:1 })
             .toArray();
 
         // Respond with the jobs the user has applied for
@@ -516,7 +516,7 @@ export const getFavoriteJobs = async (req, res) => {
         // Fetch the jobs that match the extracted job IDs
         const favoriteJobs = await jobsCollection
             .find({ _id: { $in: favoriteJobIds } })
-            .project({ _id: 1, title: 1, contacts: 1, certifications: 1, licenses: 1, schedule: 1, minHours: 1, compensation: 1, created: 1 })
+            // .project({ _id: 1, title: 1, contacts: 1, certifications: 1, licenses: 1, schedule: 1, minHours: 1, compensation: 1, created: 1 })
             .toArray();
 
         // Respond with the user's favorite jobs
@@ -528,70 +528,235 @@ export const getFavoriteJobs = async (req, res) => {
 };
 
 export const filterJobs = async (req, res) => {
-    const { licenses, schedule, minHours, page = 1, limit = 10 } = req.body;
+    const { geoCode, filters, page = 1, limit = 10 } = req.body;
+    const { schedule, licenses, minHours } = filters;
 
     try {
+        // Validate required fields
+        if (!geoCode?.coordinates) {
+            return res.status(400).json({
+                success: false,
+                message: "Valid geoCode with coordinates [lng, lat] is required.",
+            });
+        }
+
         const { db } = await connectToDatabase();
-        const jobsCollection = db.collection('jobs');
+        const jobsCollection = db.collection("jobs");
 
         // Pagination setup
         const pageNum = Math.max(1, parseInt(page, 10));
         const limitNum = Math.max(1, parseInt(limit, 10));
         const skip = (pageNum - 1) * limitNum;
 
-        // Match stage: Build conditions dynamically
-        const matchConditions = { draft: false }; // Start with the default condition
-
-        if (licenses && licenses.length > 0) {
-            matchConditions.licenses = { $in: licenses }; // Match any license in the array
-        }
-
-        if (schedule) {
-            matchConditions.schedule = schedule; // Exact match for schedule
-        }
-
-        if (minHours) {
-            if (typeof minHours === 'object' && (minHours.min || minHours.max)) {
-                matchConditions.minHours = {};
-                if (minHours.min !== undefined) {
-                    matchConditions.minHours.$gte = parseInt(minHours.min, 10); // Minimum value
-                }
-                if (minHours.max !== undefined) {
-                    matchConditions.minHours.$lte = parseInt(minHours.max, 10); // Maximum value
-                }
-            } else {
-                matchConditions.minHours = { $gte: parseInt(minHours, 10) }; // Minimum hours filter
-            }
-        }
-
-        // Build the aggregation pipeline
+        // Build aggregation pipeline
         const pipeline = [
-            { $match: matchConditions }, // Apply match conditions
-            { $project: { applicants: 0 } }, // Exclude fields if necessary
-            { $sort: { created: -1 } }, // Sort by newest jobs
-            { $skip: skip }, // Pagination: Skip based on page
-            { $limit: limitNum }, // Limit number of jobs returned
+            // Step 1: `$geoNear`: Filter by proximity
+            {
+                $geoNear: {
+                    near: {
+                        type: "Point",
+                        coordinates: [geoCode.coordinates.lng, geoCode.coordinates.lat],
+                    },
+                    distanceField: "distance",
+                    maxDistance: 50000, // 50 km radius
+                    spherical: true,
+                },
+            },
+            // Step 2: `$match`: Filter based on schedule, licenses, and flexible minHours
+            {
+                $match: {
+                    draft: false, // Exclude draft jobs
+                    ...(schedule?.length > 0 && { schedule: { $in: schedule } }), // Match any schedule
+                    ...(licenses?.length > 0 && { licenses: { $in: licenses } }), // Match any license
+                    ...(minHours && { minHours: { $lte: parseInt(minHours, 10) + 10 } }), // Flexible minHours: Allow a buffer
+                },
+            },
+            // Step 3: `$sort`: Sort by distance (ascending) and creation time (descending)
+            { $sort: { distance: 1, created: -1 } },
+            // Step 4: `$skip` and `$limit`: Pagination
+            { $skip: skip },
+            { $limit: limitNum },
+            // Step 5: `$project`: Exclude unnecessary fields
+            // {
+            //   $project: {
+            //     applicants: 1, // Exclude applicants
+            //     hash: 1, // Exclude hash
+            //   },
+            // },
         ];
 
-        // Execute the aggregation pipeline
+        // Execute the pipeline
         const jobs = await jobsCollection.aggregate(pipeline).toArray();
 
-        // Count total jobs for pagination (without $skip and $limit)
-        const totalJobs = await jobsCollection.countDocuments(matchConditions);
+        //   // Debugging: Check the pipeline and results
+        //   console.log("Pipeline:", JSON.stringify(pipeline, null, 2));
+        //   console.log("Jobs found:", jobs.length);
+
+        // Count total jobs matching the filters
+        const totalJobsPipeline = [
+            {
+                $geoNear: {
+                    near: {
+                        type: "Point",
+                        coordinates: [geoCode.coordinates.lng, geoCode.coordinates.lat],
+                    },
+                    distanceField: "distance",
+                    maxDistance: 50000,
+                    spherical: true,
+                },
+            },
+            {
+                $match: {
+                    draft: false,
+                    ...(schedule?.length > 0 && { schedule: { $in: schedule } }),
+                    ...(licenses?.length > 0 && { licenses: { $in: licenses } }),
+                    ...(minHours && { minHours: { $lte: parseInt(minHours, 10) + 10 } }), // Flexible minHours
+                },
+            },
+        ];
+
+        const totalJobs = await jobsCollection.aggregate(totalJobsPipeline).toArray();
 
         // Return the filtered jobs and pagination info
         return res.status(200).json({
             success: true,
-            totalJobs, // Total number of jobs matching the filters
-            totalPages: Math.ceil(totalJobs / limitNum), // Total number of pages
-            currentPage: pageNum, // The current page
-            jobs, // The actual jobs data
+            jobs,
+            pagination: {
+                totalJobs: totalJobs.length,
+                totalPages: Math.ceil(totalJobs.length / limitNum),
+                currentPage: pageNum,
+                limit: limitNum,
+            },
         });
     } catch (error) {
-        console.error('Error filtering jobs with pipeline:', error);
+        console.error("Error filtering jobs:", error.message);
         return res.status(500).json({
             success: false,
-            message: 'An error occurred while filtering jobs.',
+            message: "An error occurred while filtering jobs.",
         });
     }
 };
+
+
+
+export const fetchAndFilterJobsSSR = async (req, res) => {
+    try {
+      // Extract query parameters
+      const { page = 1, limit = 10, schedule, licenses, minHours } = req.query;
+  
+      // Parse filters into arrays
+      const scheduleFilter = schedule ? (Array.isArray(schedule) ? schedule : schedule.split(",")) : [];
+      const licensesFilter = licenses ? (Array.isArray(licenses) ? licenses : licenses.split(",")) : [];
+      const minHoursFilter = minHours ? parseInt(minHours, 10) : null; // Default to null if not provided
+  
+      // Get user's IP address (use default for testing if not available)
+      const userIp = req.headers["x-forwarded-for"] || req.connection.remoteAddress || "67.183.58.7";
+      let geoCode = null;
+  
+      // Fetch geolocation using IP
+      try {
+        const response = await axios.get(
+          `http://api.ipstack.com/${userIp}?access_key=b4edc01b56d1f59a053bd88eba5a2c73`
+        );
+        if (response.status === 200 && response.data) {
+          const { latitude, longitude } = response.data;
+          geoCode = { lat: latitude, lng: longitude };
+        } else {
+          throw new Error("Failed to retrieve geolocation");
+        }
+      } catch (error) {
+        console.warn("Geolocation fetch failed. Defaulting to Seattle.");
+        geoCode = { lat: 47.6062, lng: -122.3321 }; // Default to Seattle if geolocation fails
+      }
+  
+      if (!geoCode) {
+        return res.status(400).json({
+          success: false,
+          message: "Failed to determine geolocation.",
+        });
+      }
+  
+      const { db } = await connectToDatabase();
+      const jobsCollection = db.collection("jobs");
+  
+      // Pagination setup
+      const pageNum = Math.max(1, parseInt(page, 10));
+      const limitNum = Math.max(1, parseInt(limit, 10));
+      const skip = (pageNum - 1) * limitNum;
+  
+      // Build `$match` conditions dynamically
+      const matchConditions = { draft: false }; // Always exclude draft jobs
+      if (scheduleFilter.length > 0) {
+        matchConditions.schedule = { $in: scheduleFilter };
+      }
+      if (licensesFilter.length > 0) {
+        matchConditions.licenses = { $in: licensesFilter };
+      }
+      if (minHoursFilter !== null) {
+        matchConditions.minHours = { $gte: minHoursFilter }; // Match flexible minimum hours
+      }
+  
+      // Build aggregation pipeline
+      const pipeline = [
+        // Step 1: `$geoNear` if geolocation is available
+        {
+          $geoNear: {
+            near: {
+              type: "Point",
+              coordinates: [geoCode.lng, geoCode.lat], // Longitude, Latitude
+            },
+            distanceField: "distance",
+            maxDistance: 50000, // 50 km radius
+            spherical: true,
+          },
+        },
+        // Step 2: `$match` to filter based on dynamic conditions
+        { $match: matchConditions },
+        // Step 3: `$sort` to prioritize jobs
+        { $sort: { distance: 1, created: -1 } }, // Closest first, then newest
+        // Step 4: Pagination using `$skip` and `$limit`
+        { $skip: skip },
+        { $limit: limitNum },
+      ];
+  
+      // Execute the pipeline
+      const jobs = await jobsCollection.aggregate(pipeline).toArray();
+  
+      // Count total jobs matching the filters
+      const totalJobsPipeline = [
+        {
+          $geoNear: {
+            near: {
+              type: "Point",
+              coordinates: [geoCode.lng, geoCode.lat],
+            },
+            distanceField: "distance",
+            maxDistance: 50000,
+            spherical: true,
+          },
+        },
+        { $match: matchConditions },
+      ];
+  
+      const totalJobs = await jobsCollection.aggregate(totalJobsPipeline).toArray();
+  
+      // Return the filtered jobs and pagination info
+      return res.status(200).json({
+        success: true,
+        jobs,
+        pagination: {
+          totalJobs: totalJobs.length,
+          totalPages: Math.ceil(totalJobs.length / limitNum),
+          currentPage: pageNum,
+          limit: limitNum,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching or filtering jobs:", error.message);
+      return res.status(500).json({
+        success: false,
+        message: "An error occurred while fetching or filtering jobs.",
+      });
+    }
+  };
+  

@@ -2,9 +2,25 @@ import { ObjectId } from "mongodb";
 import { getGeocodeAddress, isValidZipcode } from '../../utils/helper.js';
 import { connectToDatabase } from "../../utils/mongodb.js";
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import axios from "axios";
 
-
-
+export const getGeoLocation = async (ip) => {
+    const  testIp = "67.183.58.7"
+    try {
+        const response = await axios.get(`http://api.ipstack.com/${testIp}?access_key=b4edc01b56d1f59a053bd88eba5a2c73`);
+        // console.log(response)
+        if (response.status === 200 && response.data) {
+            const { latitude, longitude } = response.data;
+            if (latitude && longitude) {
+                return { lat: latitude, lng: longitude };
+            }
+        }
+        throw new Error("Failed to retrieve geolocation");
+    } catch (error) {
+        console.error("Error fetching geolocation:", error.message);
+        throw error;
+    }
+};
 // Helper function for phone number validation and formatting
 const formatPhoneNumber = (tel) => {
     const phoneNumber = parsePhoneNumberFromString(tel, 'US');
@@ -366,7 +382,7 @@ export const updateProviderProfile = async (req, res) => {
         const { db } = await connectToDatabase(); // Establish database connection
         const users = db.collection('users');
         const contacts = db.collection('contacts');
-
+        console.log(payload.zipcode)
         // 1. Format phone number to E164 format (Helper function)
         // const tel = formatPhoneNumber(payload.settings.tel); validate at the client-side using twilio
 
@@ -675,4 +691,107 @@ export const updateFavoriteCandidate = async (req, res) => {
     }
 };
 
-
+export const searchCaregiversFilter = async (req, res) => {
+    try {
+      // Extract query parameters
+      const { availability = [], licenses = [], page = 1, limit = 10 } = req.query;
+       console.log(req.query)
+      const { db } = await connectToDatabase();
+      const caregiversCollection = db.collection("users");
+  
+      // Parse availability and licenses to arrays
+      const availabilityFilter = Array.isArray(availability) ? availability : availability.split(",");
+      const licensesFilter = Array.isArray(licenses) ? licenses : licenses.split(",");
+        console.log(availabilityFilter)
+      // Get user's IP address
+      const userIp = req.headers["x-forwarded-for"] || req.connection.remoteAddress || "";
+      if (!userIp) {
+        return res.status(400).json({ success: false, message: "Cannot determine IP address" });
+      }
+  
+      // Fetch geolocation using the helper function
+      const { lat, lng } = await getGeoLocation(userIp);
+  
+      // Ensure page and limit are valid numbers
+      const pageNum = Math.max(1, parseInt(page));
+      const limitNum = Math.max(1, parseInt(limit));
+      const skip = (pageNum - 1) * limitNum; // Calculate how many caregivers to skip
+  
+      // Build the aggregation pipeline
+      const pipeline = [
+        {
+          $geoNear: {
+            near: {
+              type: "Point",
+              coordinates: [lng, lat], // Longitude, Latitude
+            },
+            distanceField: "dist.calculated",
+            maxDistance: 50000, // 50 km radius
+            spherical: true,
+          },
+        },
+        {
+          $match: {
+            role: "caregiver", // Ensure only caregivers are matched
+            complete:true,
+            ...(availabilityFilter.length && { availability: { $all: availabilityFilter } }),
+            ...(licensesFilter.length && { licenses: { $all: licensesFilter } }),
+          },
+        },
+        {
+          $sort: { created: -1 }, // Sort by the newest caregivers
+        },
+        {
+          $skip: skip, // Skip caregivers for pagination
+        },
+        {
+          $limit: limitNum, // Limit results for pagination
+        },
+      ];
+  
+      // Execute the pipeline
+      const caregivers = await caregiversCollection.aggregate(pipeline).toArray();
+  
+      // Count total caregivers for the given query
+      const totalCountPipeline = [
+        {
+          $geoNear: {
+            near: {
+              type: "Point",
+              coordinates: [lng, lat],
+            },
+            distanceField: "dist.calculated",
+            maxDistance: 50000,
+            spherical: true,
+          },
+        },
+        {
+          $match: {
+            role: "caregiver",
+            ...(availabilityFilter.length && { availability: { $all: availabilityFilter } }),
+            ...(licensesFilter.length && { licenses: { $all: licensesFilter } }),
+          },
+        },
+      ];
+      const totalCaregivers = await caregiversCollection.aggregate(totalCountPipeline).toArray();
+  
+      // Return the caregivers and pagination info
+      return res.status(200).json({
+        success: true,
+        message: "Caregivers fetched successfully",
+        caregivers,
+        pagination: {
+          totalCaregivers: totalCaregivers.length,
+          totalPages: Math.ceil(totalCaregivers.length / limitNum),
+          currentPage: pageNum,
+          limit: limitNum,
+        },
+      });
+    } catch (error) {
+      console.error("Error searching caregivers:", error.message);
+      return res.status(500).json({
+        success: false,
+        message: "An error occurred while searching caregivers",
+      });
+    }
+};

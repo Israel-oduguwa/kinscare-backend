@@ -261,40 +261,37 @@ export const replyToPostInThread = async (req, res) => {
  * @param {Object} res - The response object
  */
 export const getThreadById = async (req, res) => {
-    // Extract the threadId from the request parameters
     const { threadId } = req.params;
-    // console.log(threadId)
+
     try {
-        // Get references to the collections we'll be working with
-        const threads = db.collection('threads');
-        const posts = db.collection('posts');
-        const users = db.collection('users'); // Reference to the users collection
+        const { db } = await connectToDatabase();
+        const threads = db.collection("threads");
+        const posts = db.collection("posts");
+        const users = db.collection("users");
 
         // Find the thread by its ID
         const thread = await threads.findOne({ _id: new ObjectId(threadId) });
-        console.log(thread)
+
         // If the thread doesn't exist, return a 404 error
         if (!thread) {
-            return res.status(404).json({ success: false, message: 'Thread not found' });
+            return res.status(404).json({ success: false, message: "Thread not found" });
         }
 
-        // Fetch all posts associated with this thread
-        // const allPosts = await posts.find({ threadId: new ObjectId(threadId) }).toArray();
-        const userID = thread.creator.toString();
-        // Fetch the user data using the creator's userID
-        const user = await users.findOne(
-            { userID }, // Assuming `creator` is the user ID stored in the thread
-            { projection: { userID: 1, complete: 1, fname: 1, lname: 1 } } // Only return the specified fields
-        );
-        // console.log(user)
+        // Fetch the user data for the creator
+        const user = await users.findOne({ userID: thread.creator });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "Creator not found" });
+        }
+
         // Increment the view count for this thread
         await threads.updateOne({ _id: new ObjectId(threadId) }, { $inc: { views: 1 } });
 
-        // Send the response with the thread, its posts, and the creator's user data
+        // Return the thread data and all user data
         res.status(200).json({ success: true, thread, creator: user });
     } catch (error) {
-        console.error('Error retrieving thread by ID:', error);
-        res.status(500).json({ success: false, message: 'Failed to retrieve thread by ID.' });
+        console.error("Error retrieving thread by ID:", error);
+        res.status(500).json({ success: false, message: "Failed to retrieve thread by ID." });
     }
 };
 
