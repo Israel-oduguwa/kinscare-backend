@@ -1,12 +1,12 @@
 // this is used for validation
 const twilio = require("twilio");
 // Initialize Twilio client
-const TWILIO_ACCOUNT_SID="ACf74503b1d79d4249214a626c95f3c7b2"
-const TWILIO_ACCOUNT_AUTH_TOKEN="35fea1036f93945a92f915bfad682307"
-const TWILIO_PHONE_NUMBER ="12063097500"
+const SID="ACf74503b1d79d4249214a626c95f3c7b2"
+const AuthT="35fea1036f93945a92f915bfad682307"
+const PhoneNumber ="12063097500" 
 const client = twilio(
-TWILIO_ACCOUNT_SID,
-TWILIO_ACCOUNT_AUTH_TOKEN
+SID,
+AuthT
 );
 
 module.exports.sendSMS = async (req, res) => {
@@ -25,7 +25,7 @@ module.exports.sendSMS = async (req, res) => {
     // Send the SMS using Twilio
     const send = await client.messages.create({
       body: messageBody,
-      from: TWILIO_PHONE_NUMBER, // Twilio verified phone number
+      from: PhoneNumber, // Twilio verified phone number
       to,
     });
 
