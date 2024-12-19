@@ -1,9 +1,12 @@
 // this is used for validation
 const twilio = require("twilio");
 // Initialize Twilio client
+const TWILIO_ACCOUNT_SID="ACf74503b1d79d4249214a626c95f3c7b2"
+const TWILIO_ACCOUNT_AUTH_TOKEN="35fea1036f93945a92f915bfad682307"
+const TWILIO_PHONE_NUMBER ="12063097500"
 const client = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_ACCOUNT_AUTH_TOKEN
+  TWILIO_ACCOUNT_SID,
+  TWILIO_ACCOUNT_AUTH_TOKEN
 );
 
 module.exports.validatePhoneNumber = async (req, res) => {
