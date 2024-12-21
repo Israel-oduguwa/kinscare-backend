@@ -6,7 +6,7 @@ const AuthT="4670bf432ee97f5380b40c31f4666060"
 // const TWILIO_PHONE_NUMBER ="12063097500"
 const client = twilio(
   Sid,
-  authT
+  AuthT
 );
 
 module.exports.validatePhoneNumber = async (req, res) => {
