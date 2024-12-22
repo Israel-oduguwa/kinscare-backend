@@ -82,43 +82,42 @@ export const createOrUpdateResume = async (req, res) => {
  * @param {Object} res - Express response object
  */
 export const saveCareerRecommendation = async (req, res) => {
-  const { userID, recommendation } = req.body;
-
-  // Validate input
-  if (!userID || !recommendation) {
-    return res.status(400).json({ success: false, message: 'userID and recommendation are required.' });
-  }
-
   try {
-    // Connect to the database
-    const { db } = await connectToDatabase();
-    const usersCollection = db.collection('users');
+      const { userID, recommendation } = req.body;
 
-    // Update user document with new recommendation
-    const result = await usersCollection.updateOne(
-      { userID }, // Match user by userID
-      {
-        $push: { careerRecommendations: recommendation }, // Append recommendation to an array
-      },
-      { upsert: true } // If user doesn't exist, create the document
-    );
+      // Validate the input
+      if (!userID || !recommendation || typeof recommendation !== "object") {
+          return res.status(400).json({
+              success: false,
+              message: "'userID' and 'recommendation' (JSON object) are required.",
+          });
+      }
 
-    if (result.modifiedCount > 0 || result.upsertedCount > 0) {
+      const { db } = await connectToDatabase();
+      const usersCollection = db.collection("users");
+
+      // Update or insert recommendation in the user's document
+      const result = await usersCollection.updateOne(
+          { userID }, // Find the user by userID
+          { $set: { recommendation } }, // Save or update the recommendation field
+          { upsert: true } // Create the document if it doesn't exist
+      );
+
       return res.status(200).json({
-        success: true,
-        message: 'Career recommendation saved successfully.',
+          success: true,
+          message: "Recommendation saved successfully.",
+          result,
       });
-    } else {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found. Recommendation was not saved.',
-      });
-    }
   } catch (error) {
-    console.error('Error saving career recommendation:', error);
-    return res.status(500).json({ success: false, message: 'Internal server error.' });
+      console.error("Error saving recommendation:", error.message);
+      return res.status(500).json({
+          success: false,
+          message: "An error occurred while saving the recommendation.",
+          error: error.message,
+      });
   }
 };
+
 
 export const getProviderProfile = async (req, res) => {
   try {
