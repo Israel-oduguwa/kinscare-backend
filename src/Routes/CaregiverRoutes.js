@@ -19,6 +19,7 @@ router.post('/notifications/:notificationId', updateNotificationStatus);
 router.post('/resume/update/:userID', createOrUpdateResume);
 router.post('/save-recommendation', saveCareerRecommendation);
 
+
 // provider data
 router.get("/get-provider/:providerId", getProviderProfile);
 
