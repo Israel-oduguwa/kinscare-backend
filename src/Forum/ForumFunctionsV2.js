@@ -271,14 +271,19 @@ export const getThreadById = async (req, res) => {
 
         // Find the thread by its ID
         const thread = await threads.findOne({ _id: new ObjectId(threadId) });
-
+        console.log(thread)
         // If the thread doesn't exist, return a 404 error
         if (!thread) {
             return res.status(404).json({ success: false, message: "Thread not found" });
         }
 
         // Fetch the user data for the creator
-        const user = await users.findOne({ userID: thread.creator });
+        const creatorUserId = thread.creator.toString();
+        // console.log("Thread Creator UserID (String):", creatorUserId);
+
+        // Find the user in the `users` collection by userID
+        const user = await users.findOne({ userID: creatorUserId });
+        // console.log(user)
 
         if (!user) {
             return res.status(404).json({ success: false, message: "Creator not found" });
