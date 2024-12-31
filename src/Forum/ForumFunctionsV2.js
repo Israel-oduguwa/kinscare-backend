@@ -271,7 +271,7 @@ export const getThreadById = async (req, res) => {
 
         // Find the thread by its ID
         const thread = await threads.findOne({ _id: new ObjectId(threadId) });
-        console.log(thread)
+        // console.log(thread)
         // If the thread doesn't exist, return a 404 error
         if (!thread) {
             return res.status(404).json({ success: false, message: "Thread not found" });

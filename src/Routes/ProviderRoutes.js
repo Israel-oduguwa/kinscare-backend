@@ -29,7 +29,7 @@ router.post('/create-setup-intent', createSetupIntent);
 router.post('/create-subscription', createSubscription);
 router.post('/cancel-subscription', cancelSubscription);
 router.post('/update-subscription', updateSubscription);
-router.post('/webhook',  handleStripeWebhook);
+// router.post('/webhook',  handleStripeWebhook);
 // GET /api/payment-methods
 router.post("/payment-methods", fetchSavedCards);
 // POST /api/subscription

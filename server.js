@@ -10,7 +10,15 @@ import TwilioRoute from "./src/Routes/TwilioRoute.js"
 import NotificationRoutes from "./src/Routes/NotificationRoutes.js"
 import cors from "cors";
 import bodyParser from "body-parser"
+import { handleStripeWebhook } from './src/Payments/StripeWebhooks.js';
 const app = express();
+app.use(express.json({
+    verify: (req, res, buf) => {
+      if (req.originalUrl.startsWith('/webhook')) {
+        req.rawBody = buf.toString();
+      }
+    },
+     }));
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(json())
@@ -42,6 +50,12 @@ app.use('/api/v1', uploadFiles)
 app.use('/api/v1/', deleteFiles)
 
 
+app.post(
+    "/webhook",
+    express.raw({ type: "application/json" }), // Raw body for Stripe
+    handleStripeWebhook // Webhook handler
+);
+
 //user authentication 
 app.use('/api/v1/auth', AuthRoutes);
 
@@ -58,7 +72,7 @@ app.use('/api/v1/twilio', TwilioRoute)
 app.use('/api/v1/notifications', NotificationRoutes)
 
 app.get("/", (req, res) => {
-    res.send("health Check, the server is healthy"); 
+    res.send("health Check, the server is healthy");
 });
 
 

@@ -23,6 +23,7 @@
     "google-libphonenumber": "^3.2.38",
     "jwt-decode": "^4.0.0",
     "libphonenumber-js": "^1.11.9",
+    "micro": "^10.0.1",
     "mixpanel": "^0.18.0",
     "mongodb": "^6.8.0",
     "multer": "^1.4.5-lts.1",

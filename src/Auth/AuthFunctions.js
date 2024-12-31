@@ -315,6 +315,7 @@ export const deleteUser = async (req, res) => {
         await users.deleteOne({ userID });
         await contacts.deleteMany({ userID });
         await jobs.deleteMany({ userID });
+        await jobs.deleteMany({userID:null})
 
         // Step 3: Delete documents in trials_track collection where email matches
         await trialsTrack.deleteMany({ email });
