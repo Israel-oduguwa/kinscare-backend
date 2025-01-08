@@ -29,7 +29,8 @@ const allowedOrigins = [
     "http://localhost:3001",
     "http://localhost:5173",
     "https://kinscarev2.vercel.app",
-    "https://kinscare.wm.r.appspot.com"
+    "https://kinscare.wm.r.appspot.com",
+    "http://192.168.1.133:3001"
 ];
 app.use(
     cors({

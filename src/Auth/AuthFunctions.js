@@ -294,11 +294,14 @@ export const deleteUser = async (req, res) => {
 
     // List of emails to delete
     const emailsToDelete = [
-      "apiprovidertesting@gmail.com",
+      // "apiprovidertesting@gmail.com",
       "apicaregivertesting@gmail.com",
-      "oduguwa.israel22@gmail.com",
-      "iaoduguwa@student.oauife.edu.ng",
-      "oauhealth@kinscare.org"
+      "apicaregivertesting2@gmail.com",
+      "apicaregivertesting3@gmail.com",
+      "apicaregivertesting4@gmail.com"
+      // "oduguwa.israel22@gmail.com",
+      // "iaoduguwa@student.oauife.edu.ng",
+      // "oauhealth@kinscare.org"
     ];
 
     const deleted = []; // Array to store deleted user details
