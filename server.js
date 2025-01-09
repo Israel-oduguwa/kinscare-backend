@@ -10,16 +10,17 @@ import { notFoundHandler } from "./src/middlewares/notFoundHandler.js";
 import { handleStripeWebhook } from './src/Payments/StripeWebhooks.js';
 import logger from "./utils/logger.js";
 
-import emailRoutes from "./src/Routes/emailRoutes.js";
-import forumRoutes from "./src/Routes/forumRoutes.js";
+
+import emailRoutes from "./src/Routes/emailRoutes.js"
+import forumRoutes from "./src/Routes/forumRoutes.js"
 import uploadFiles from "./src/Routes/uploadFiles.cjs";
 import deleteFiles from "./src/Routes/deleteFiles.cjs";
-import authRoutes from "./src/Routes/AuthRoutes.js";
-import caregiverRoutes from "./src/Routes/caregiverRoutes.js";
-import providerRoutes from "./src/Routes/providerRoutes.js";
-import twilioRoutes from "./src/Routes/TwilioRoute.js";
-import notificationRoutes from "./src/Routes/notificationRoutes.js";
-import trackingRoutes from "./src/Routes/TrackingRoutes.js";
+import AuthRoutes from "./src/Routes/AuthRoutes.js";
+import CaregiverRoutes from "./src/Routes/CaregiverRoutes.js";
+import ProviderRoutes from "./src/Routes/ProviderRoutes.js"
+import TwilioRoute from "./src/Routes/TwilioRoute.js"
+import NotificationRoutes from "./src/Routes/NotificationRoutes.js"
+import TrackingRoutes from "./src/Routes/TrackingRoutes.js";
 
 dotenv.config();
 
@@ -46,12 +47,12 @@ app.use("/api/v1/email", emailRoutes);
 app.use("/api/v1/forum", forumRoutes);
 app.use("/api/v1", uploadFiles);
 app.use("/api/v1", deleteFiles);
-app.use("/api/v1/tracking", trackingRoutes);
-app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/caregivers", caregiverRoutes);
-app.use("/api/v1/providers", providerRoutes);
-app.use("/api/v1/twilio", twilioRoutes);
-app.use("/api/v1/notifications", notificationRoutes);
+app.use("/api/v1/tracking", TrackingRoutes);
+app.use("/api/v1/auth", AuthRoutes);
+app.use("/api/v1/caregivers", CaregiverRoutes);
+app.use("/api/v1/providers", ProviderRoutes);
+app.use("/api/v1/twilio", TwilioRoute);
+app.use("/api/v1/notifications", NotificationRoutes);
 
 // 404 and Error Handlers
 app.use(notFoundHandler); // Handles undefined routes
