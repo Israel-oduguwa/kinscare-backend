@@ -10,7 +10,6 @@ import { notFoundHandler } from "./src/middlewares/notFoundHandler.js";
 import { handleStripeWebhook } from './src/Payments/StripeWebhooks.js';
 import logger from "./utils/logger.js";
 
-
 import emailRoutes from "./src/Routes/emailRoutes.js"
 import forumRoutes from "./src/Routes/forumRoutes.js"
 import uploadFiles from "./src/Routes/uploadFiles.cjs";
