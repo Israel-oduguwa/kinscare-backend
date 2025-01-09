@@ -20,6 +20,8 @@
     "customerio-node": "^4.1.1",
     "dotenv": "^16.4.7",
     "express": "^4.19.2",
+    "facebook-nodejs-business-sdk": "^21.0.5",
+    "google-ads-api": "^17.1.0-rest-beta",
     "google-libphonenumber": "^3.2.38",
     "jwt-decode": "^4.0.0",
     "libphonenumber-js": "^1.11.9",
@@ -34,7 +36,8 @@
     "stripe": "^16.12.0",
     "twilio": "^5.3.7",
     "uuid": "^10.0.0",
-    "vwo-node-sdk": "^1.70.0"
+    "vwo-node-sdk": "^1.70.0",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.24.8",

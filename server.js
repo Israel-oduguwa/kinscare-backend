@@ -1,86 +1,61 @@
-import express, { json } from 'express';
-import emailRoutes from "./src/Routes/emailRoutes.js"
-import forumRoutes from "./src/Routes/forumRoutes.js"
-import uploadFiles from "./src/Routes/uploadFiles.cjs";
-import deleteFiles from "./src/Routes/deleteFile.cjs";
-import AuthRoutes from "./src/Routes/AuthRoutes.js";
-import CaregiverRoutes from "./src/Routes/CaregiverRoutes.js";
-import ProviderRoutes from "./src/Routes/ProviderRoutes.js"
-import TwilioRoute from "./src/Routes/TwilioRoute.js"
-import NotificationRoutes from "./src/Routes/NotificationRoutes.js"
+import express from "express";
 import cors from "cors";
-import bodyParser from "body-parser"
-import { handleStripeWebhook } from './src/Payments/StripeWebhooks.js';
+import bodyParser from "body-parser";
+import dotenv from "dotenv";
+
+import { corsConfig } from "./src/configs/corsConfig.js";
+import { stripeRawBody } from "./src/middlewares/stripeRawBody.js";
+import { errorHandler } from "./src/middlewares/errorHandler.js";
+import { notFoundHandler } from "./src/middlewares/notFoundHandler.js";
+import { handleStripeWebhook } from "./src/payments/stripeWebhooks.js";
+import logger from "./utils/logger.js";
+
+import emailRoutes from "./src/Routes/emailRoutes.js";
+import forumRoutes from "./src/Routes/forumRoutes.js";
+import uploadFiles from "./src/Routes/uploadFiles.cjs";
+import deleteFiles from "./src/Routes/deleteFiles.cjs";
+import authRoutes from "./src/Routes/AuthRoutes.js";
+import caregiverRoutes from "./src/Routes/caregiverRoutes.js";
+import providerRoutes from "./src/Routes/providerRoutes.js";
+import twilioRoutes from "./src/Routes/TwilioRoute.js";
+import notificationRoutes from "./src/Routes/notificationRoutes.js";
+import trackingRoutes from "./src/Routes/TrackingRoutes.js";
+
+dotenv.config();
+
 const app = express();
-app.use(express.json({
-    verify: (req, res, buf) => {
-      if (req.originalUrl.startsWith('/webhook')) {
-        req.rawBody = buf.toString();
-      }
-    },
-     }));
-app.use(bodyParser.json({ limit: '50mb' }));
-app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
-app.use(json())
+const PORT = process.env.PORT || 8081; // using Port 8081 AWS 
 
-const allowedOrigins = [
-    "https://kinscare.org",
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:5173",
-    "https://kinscarev2.vercel.app",
-    "https://kinscare.wm.r.appspot.com",
-    "http://192.168.1.133:3001"
-];
-app.use(
-    cors({
-        origin: allowedOrigins,
-        methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-        credentials: true,
-        // allowedHeaders: "Content-Type,Authorization,secrete-api-key", // Add secrete-api-key to the list
-    })
-);
+// Middleware
+app.use(cors(corsConfig)); 
+app.use(express.json()); 
+app.use(bodyParser.json({ limit: "50mb" })); 
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 
-// The api and functions 
-
-// Emails 
-app.use('/api/v1/email', emailRoutes);
-app.use('/api/v1/forum', forumRoutes)
-// this upload files to s3 bucket 
-app.use('/api/v1', uploadFiles)
-app.use('/api/v1/', deleteFiles)
-
-
+// Stripe Webhook Raw Body
 app.post(
-    "/webhook",
-    express.raw({ type: "application/json" }), // Raw body for Stripe
-    handleStripeWebhook // Webhook handler
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  stripeRawBody(handleStripeWebhook)
 );
 
-//user authentication 
-app.use('/api/v1/auth', AuthRoutes);
+// Routes
+app.get("/", (req, res) => res.send("Health Check: The server is healthy!"));
 
-//caregivers 
-app.use('/api/v1/caregivers', CaregiverRoutes)
+app.use("/api/v1/email", emailRoutes);
+app.use("/api/v1/forum", forumRoutes);
+app.use("/api/v1", uploadFiles);
+app.use("/api/v1", deleteFiles);
+app.use("/api/v1/tracking", trackingRoutes);
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/caregivers", caregiverRoutes);
+app.use("/api/v1/providers", providerRoutes);
+app.use("/api/v1/twilio", twilioRoutes);
+app.use("/api/v1/notifications", notificationRoutes);
 
-//providers
-app.use('/api/v1/providers', ProviderRoutes)
+// 404 and Error Handlers
+app.use(notFoundHandler); // Handles undefined routes
+app.use(errorHandler); // Centralized error handling
 
-//twilio
-app.use('/api/v1/twilio', TwilioRoute)
-
-// notification
-app.use('/api/v1/notifications', NotificationRoutes)
-
-app.get("/", (req, res) => {
-    res.send("health Check, the server is healthy");
-});
-
-
-const PORT = process.env.PORT || 8081;
-
-// Connect to the database=
-
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+// Start Server
+app.listen(PORT, () => logger.info(`Server running at http://localhost:${PORT}`));
