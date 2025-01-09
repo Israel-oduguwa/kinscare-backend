@@ -7,7 +7,7 @@ import { corsConfig } from "./src/configs/corsConfig.js";
 import { stripeRawBody } from "./src/middlewares/stripeRawBody.js";
 import { errorHandler } from "./src/middlewares/errorHandler.js";
 import { notFoundHandler } from "./src/middlewares/notFoundHandler.js";
-import { handleStripeWebhook } from "./src/payments/stripeWebhooks.js";
+import { handleStripeWebhook } from './src/Payments/StripeWebhooks.js';
 import logger from "./utils/logger.js";
 
 import emailRoutes from "./src/Routes/emailRoutes.js";
