@@ -643,110 +643,117 @@ export const filterJobs = async (req, res) => {
 
 export const fetchAndFilterJobsSSR = async (req, res) => {
     try {
-      const { page = 1, limit = 10, schedule, licenses, minHours } = req.query;
-  
-      // Parse query filters into arrays
-      const scheduleFilter = schedule?.split(",") || [];
-      const licensesFilter = licenses?.split(",") || [];
-      const minHoursFilter = minHours ? parseInt(minHours, 10) : null;
-  
-      // Get user's IP address (default for testing if not available)
-      const userIp =
-        req.headers["x-forwarded-for"] ||
-        req.connection.remoteAddress ||
-        "67.183.58.7";
-  
-      // Default geolocation (Seattle) if geolocation fails
-      const geoCode = await getGeoLocation(userIp, { lat: 47.6062, lng: -122.3321 });
-  
-      if (!geoCode) {
-        return res.status(400).json({
-          success: false,
-          message: "Failed to determine geolocation.",
+        const { page = 1, limit = 10, schedule, licenses, minHours } = req.query;
+
+        // Parse and validate pagination parameters
+        const pageNum = Number.isInteger(Number(page)) ? Math.max(1, parseInt(page, 10)) : 1;
+        const limitNum = Number.isInteger(Number(limit)) ? Math.max(1, parseInt(limit, 10)) : 10;
+        const skip = (pageNum - 1) * limitNum;
+
+        // Validate calculated `skip`
+        if (isNaN(skip)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid pagination parameters. Page and limit must be numbers.",
+            });
+        }
+
+        // Parse query filters into arrays
+        const scheduleFilter = schedule?.split(",") || [];
+        const licensesFilter = licenses?.split(",") || [];
+        const minHoursFilter = minHours ? parseInt(minHours, 10) : null;
+
+        // Get user's IP address (default for testing if not available)
+        const userIp =
+            req.headers["x-forwarded-for"] ||
+            req.connection.remoteAddress ||
+            "67.183.58.7";
+
+        // Default geolocation (Seattle) if geolocation fails
+        const geoCode = await getGeoLocation(userIp, { lat: 47.6062, lng: -122.3321 });
+
+        if (!geoCode) {
+            return res.status(400).json({
+                success: false,
+                message: "Failed to determine geolocation.",
+            });
+        }
+
+        // Connect to the database
+        const { db } = await connectToDatabase();
+        const jobsCollection = db.collection("jobs");
+
+        // Build `$match` conditions
+        const matchConditions = {
+            draft: false, // Exclude draft jobs
+            ...(scheduleFilter.length > 0 && { schedule: { $in: scheduleFilter } }),
+            ...(licensesFilter.length > 0 && { licenses: { $in: licensesFilter } }),
+            ...(minHoursFilter !== null && { minHours: { $gte: minHoursFilter } }),
+        };
+
+        // Aggregation pipeline
+        const pipeline = [
+            {
+                $geoNear: {
+                    near: { type: "Point", coordinates: [geoCode.lng, geoCode.lat] },
+                    distanceField: "distance",
+                    maxDistance: 50000, // 50 km radius
+                    spherical: true,
+                },
+            },
+            { $match: matchConditions }, // Apply filters
+            {
+                $facet: {
+                    jobs: [
+                        { $sort: { distance: 1, created: -1 } }, // Sort by distance, then by creation date
+                        { $skip: skip },
+                        { $limit: limitNum },
+                    ],
+                    totalCount: [{ $count: "count" }],
+                },
+            },
+        ];
+
+        // Execute the pipeline
+        const results = await jobsCollection.aggregate(pipeline).toArray();
+
+        // Extract data from the result
+        const jobs = results[0]?.jobs || [];
+        const totalJobs = results[0]?.totalCount[0]?.count || 0;
+
+        // Return the filtered jobs and pagination info
+        return res.status(200).json({
+            success: true,
+            jobs,
+            pagination: {
+                totalJobs,
+                totalPages: Math.ceil(totalJobs / limitNum),
+                currentPage: pageNum,
+                limit: limitNum,
+            },
         });
-      }
-  
-      // Connect to the database
-      const { db } = await connectToDatabase();
-      const jobsCollection = db.collection("jobs");
-  
-      // Pagination setup
-      const pageNum = Math.max(1, parseInt(page, 10));
-      const limitNum = Math.max(1, parseInt(limit, 10));
-      const skip = (pageNum - 1) * limitNum;
-  
-      // Build `$match` conditions
-      const matchConditions = {
-        draft: false, // Exclude draft jobs
-        ...(scheduleFilter.length > 0 && { schedule: { $in: scheduleFilter } }),
-        ...(licensesFilter.length > 0 && { licenses: { $in: licensesFilter } }),
-        ...(minHoursFilter !== null && { minHours: { $gte: minHoursFilter } }),
-      };
-  
-      // Aggregation pipeline
-      const pipeline = [
-        {
-          $geoNear: {
-            near: { type: "Point", coordinates: [geoCode.lng, geoCode.lat] },
-            distanceField: "distance",
-            maxDistance: 50000, // 50 km radius
-            spherical: true,
-          },
-        },
-        { $match: matchConditions }, // Apply filters
-        {
-          $facet: {
-            jobs: [
-              { $sort: { distance: 1, created: -1 } }, // Sort by distance, then by creation date
-              { $skip: skip },
-              { $limit: limitNum },
-            ],
-            totalCount: [{ $count: "count" }],
-          },
-        },
-      ];
-  
-      // Execute the pipeline
-      const results = await jobsCollection.aggregate(pipeline).toArray();
-  
-      // Extract data from the result
-      const jobs = results[0]?.jobs || [];
-      const totalJobs = results[0]?.totalCount[0]?.count || 0;
-  
-      // Return the filtered jobs and pagination info
-      return res.status(200).json({
-        success: true,
-        jobs,
-        pagination: {
-          totalJobs,
-          totalPages: Math.ceil(totalJobs / limitNum),
-          currentPage: pageNum,
-          limit: limitNum,
-        },
-      });
     } catch (error) {
-      console.error("Error fetching or filtering jobs:", error.message);
-      return res.status(500).json({
-        success: false,
-        message: "An error occurred while fetching or filtering jobs.",
-      });
+        console.error("Error fetching or filtering jobs:", error.message);
+        return res.status(500).json({
+            success: false,
+            message: "An error occurred while fetching or filtering jobs.",
+        });
     }
-  };
-  
-  // Utility function to fetch geolocation
-  const getGeoLocation = async (ip, defaultGeo) => {
+};
+
+// Utility function to fetch geolocation
+const getGeoLocation = async (ip, defaultGeo) => {
     try {
-      const response = await axios.get(
-        `http://api.ipstack.com/${ip}?access_key=b4edc01b56d1f59a053bd88eba5a2c73`
-      );
-      if (response.status === 200 && response.data) {
-        const { latitude, longitude } = response.data;
-        return { lat: latitude, lng: longitude };
-      }
-      return defaultGeo;
+        const response = await axios.get(
+            `http://api.ipstack.com/${ip}?access_key=b4edc01b56d1f59a053bd88eba5a2c73`
+        );
+        if (response.status === 200 && response.data) {
+            const { latitude, longitude } = response.data;
+            return { lat: latitude, lng: longitude };
+        }
+        return defaultGeo;
     } catch (error) {
-      console.warn("Geolocation fetch failed. Defaulting to default geo.");
-      return defaultGeo;
+        console.warn("Geolocation fetch failed. Defaulting to default geo.");
+        return defaultGeo;
     }
-  };
-  
+};
