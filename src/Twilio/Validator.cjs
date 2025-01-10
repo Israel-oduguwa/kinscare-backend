@@ -2,7 +2,10 @@
 const twilio = require("twilio");
 // Initialize Twilio client
 const Sid="ACf74503b1d79d4249214a626c95f3c7b2"
-const AuthT="50a7c5323a24dbc43d9443cd0eb40b72"
+const AuthT="4893f8fac21f9c8a2d24fdfaba8d3f76"
+
+
+
 // const TWILIO_PHONE_NUMBER ="12063097500"
 const client = twilio(
   Sid,
@@ -47,7 +50,7 @@ module.exports.validatePhoneNumber = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Error validating phone number:", error.message);
+    console.error("Error validating phone number:", error);
 
     // Handle Twilio-specific errors
     if (error.code) {
