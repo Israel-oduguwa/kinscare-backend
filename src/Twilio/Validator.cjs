@@ -1,8 +1,8 @@
 // this is used for validation
 const twilio = require("twilio");
 // Initialize Twilio client
-const Sid="ACf74503b1d79d4249214a626c95f3c7b2"
-const AuthT="4893f8fac21f9c8a2d24fdfaba8d3f76"
+const Sid="ACf74503b1d79d4249214a626c95f3c7b2";
+const AuthT="4893f8fac21f9c8a2d24fdfaba8d3f76";
 // const TWILIO_PHONE_NUMBER ="12063097500"
 const client = twilio(
   Sid,
