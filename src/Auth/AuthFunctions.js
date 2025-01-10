@@ -298,9 +298,9 @@ export const deleteUser = async (req, res) => {
       "apicaregivertesting@gmail.com",
       "apicaregivertesting2@gmail.com",
       "apicaregivertesting3@gmail.com",
-      "apicaregivertesting4@gmail.com"
-      // "oduguwa.israel22@gmail.com",
-      // "iaoduguwa@student.oauife.edu.ng",
+      "apicaregivertesting4@gmail.com",
+      "oduguwa.israel22@gmail.com",
+      "iaoduguwa@student.oauife.edu.ng",
       // "oauhealth@kinscare.org"
     ];
 

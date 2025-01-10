@@ -1,0 +1,43 @@
+# Value without quotes (doesn't support whitespace)
+KEY_1=value_of_KEY_1
+# Value with quotes (supports whitespace)
+KEY_2="value of KEY_2"
+
+
+
+# The secerete Keys and data 
+CUSTOMERIO_API_KEY="597b44bb3e15827eb48573406022562f"
+GOOGLE_GEOCODE_KEY="AIzaSyCcAmIRJbf3JP1vtbKOY-j6YjlDX3Kib08"
+SENDGRID_API_KEY="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"
+MONGODB_URI= "mongodb://israeloduguwa:adeboyega@zororo-cluster-shard-00-00.ruky4.mongodb.net:27017,zororo-cluster-shard-00-01.ruky4.mongodb.net:27017,zororo-cluster-shard-00-02.ruky4.mongodb.net:27017/?ssl=true&replicaSet=atlas-wkxcm3-shard-0&authSource=admin&retryWrites=true&w=majority"
+AWS_ACCESS_KEY_ID="AKIA4DMVQ3NS6ESLMYRJ"
+AWS_SECRET_ACCESS_KEY="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"
+AWS_REGION="us-east-1"
+S3_BUCKET_NAME="kinscare-storage"
+MONGODEV="mongodb+srv://israeloduguwa:adeboyega@cluster0.ruky4.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+
+# Stripe Payments  
+STRIPE_TEST_SECRETE_KEY="sk_test_51KzQg6AoahxG9SLGLdejdNMSzoo1JZI7qA83sjiyrCTSeVcbsA5ShNbD7tan14k22Go2j2gx8hAt7i1Wi8s7vfr400V9OnGrof"
+
+# mongodb+srv://<db_username>:<db_password>@zororo-cluster.ruky4.mongodb.net/?retryWrites=true&w=majority&appName=zororo-cluster
+
+# Twilio 
+TWILIO_ACCOUNT_SID="ACf74503b1d79d4249214a626c95f3c7b2"
+TWILIO_ACCOUNT_AUTH_TOKEN="35fea1036f93945a92f915bfad682307"
+TWILIO_PHONE_NUMBER ="12063097500"
+
+
+# Mixpanel 
+MIXPANEL_SECRET = "42ff45b53e50598c71ced09061170a66"
+MIXPANEL_TOKEN ="cd4c57a1381072532607d8bad65b9c00"
+
+# Google 
+GOOGLE_CLIENT_ID = "101882100979-38jcm1ta1raa5e044d5u29mvlc4npfha.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"
+GOOGLE_ADS_DEVELOPER_TOKEN = "GS4T3LAW7OQweSas0fLmng"
+GOOGLE_ADS_CUSTOMER_ID = "7332741598"
+GOOGLE_CLIENT_REFRESH_TOKEN= "1//04QfXfOyyoBamCgYIARAAGAQSNwF-L9Irp9wsvrlPWUnb6HsrXYDd9ZblkPUpJRSwhw55SImIjFNgAlxMCGfiDAGe4_jw4uWxCxI"
+
+# Facebook token 
+FACEBOOK_TOKEN = '765188364849485|70c05f7046abbdbed3a0469a30f4fbd6';
+FACEBOOK_AD_ACCOUNT = '765188364849485'; 
