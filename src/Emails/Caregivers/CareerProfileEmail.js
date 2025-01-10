@@ -31,7 +31,7 @@ export const referToEmployer = async (req, res) => {
                 message: "Missing required fields: 'to', 'supervisorName', 'senderName', 'senderEmail', 'organizationName', or 'senderUserID'.",
             });
         }
-
+        
         // Prepare the email request for Customer.io
         const emailRequest = new SendEmailRequest({
             to,
