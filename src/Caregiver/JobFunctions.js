@@ -738,7 +738,7 @@ export const fetchAndFilterJobsSSR = async (req, res) => {
             success: false,
             message: "An error occurred while fetching or filtering jobs.",
         });
-    }
+    } ;
 };
 
 // Utility function to fetch geolocation
