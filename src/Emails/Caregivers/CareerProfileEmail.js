@@ -106,7 +106,7 @@ export const referToEmployer = async (req, res) => {
 
     try {
         const {
-            referal_code_, // referal_code email
+            referal_code_ // referal_code email
         } = req.body;
          console.log(req.body)
 

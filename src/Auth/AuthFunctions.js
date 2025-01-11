@@ -66,6 +66,34 @@ const upsertUserAndContact = async (userObject, contactObject, users, contacts, 
   ]);
 };
 
+const updateDocumentByReferralCode = async (referralCode, updateData) => {
+  try {
+
+      // Specify the database and collection
+      const collection = db.collection('referral');
+
+      // Query to find the document with the matching referral_code
+      const query = { referral_code: referralCode };
+
+      // Data to update
+      const update = { $set: updateData };
+
+      // Update the document
+      const result = await collection.updateOne(query, update);
+
+      if (result.matchedCount > 0) {
+          console.log(`Successfully updated the document with referral_code: ${referralCode}`);
+      } else {
+          console.log(`No document found with referral_code: ${referralCode}`);
+      }
+  } catch (error) {
+      console.error("Error updating document:", error);
+  } finally {
+
+  }
+}
+
+
 // Main controller function for creating/updating user data
 export const createUserData = async (req, res, next) => {
   try {
@@ -115,6 +143,7 @@ export const createUserData = async (req, res, next) => {
         console.error('Failed to create Stripe customer. Proceeding without it:', error.message);
       }
     }
+
 
     // Build reusable contact and user objects based on common logic
     const contactObject = {
@@ -169,6 +198,14 @@ export const createUserData = async (req, res, next) => {
 
     // Return the added or updated user data
     const addedUser = await users.findOne({ 'auth.email': email });
+    //Update the referal table if role is employer 
+    const referralEmail = email; // The referral code to match
+    const updateData = { referred_user: addedUser._id }; // The field(s) and value(s) to update
+
+    updateDocumentByReferralCode(referralEmail, updateData).then(() => {
+        console.log("Update operation completed.");
+    });
+
     res.status(200).json({
       message: 'User has been added or updated.',
       data: addedUser,
