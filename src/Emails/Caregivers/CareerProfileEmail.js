@@ -97,6 +97,55 @@ export const referToEmployer = async (req, res) => {
 
 
 /**
+ * Sends referral emails to employers asking them to refer other employers.
+ * @param {string} payload.to - Recipient email (employer)
+ */
+ export const invitedEmployerEmail = async (req, res) => {
+    // Ensure DB connection is set up once
+    const { db } = await connectToDatabase();
+
+    try {
+        const {
+            referal_code_, // referal_code email
+        } = req.body;
+         console.log(req.body)
+
+        // Validate required fields
+        if (!referal_code_) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing required fields: 'referal_code_'",
+            });
+        }
+        const collection = db.collection("referral"); // Replace with your collection name
+
+        // Query to find the document with the matching referral_code
+        const query = { referral_code: referal_code_ };
+
+        // Fetch the document
+        const document = await collection.findOne(query);
+
+        // Success response
+        return res.status(200).json({
+            success: true,
+            message: `Referred email ${referal_code_}.`,
+            data: document
+        });
+    } catch (error) {
+        console.error("Error sending referral email:", error.message);
+
+        // Error response
+        return res.status(500).json({
+            success: false,
+            message: "Failed to send the referral email.",
+            error: error.message,
+        });
+    }
+};
+
+
+
+/**
  * Sends an invitation email to a friend's email.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
