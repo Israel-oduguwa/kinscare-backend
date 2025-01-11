@@ -200,11 +200,13 @@ export const createUserData = async (req, res, next) => {
     const addedUser = await users.findOne({ 'auth.email': email });
     //Update the referal table if role is employer 
     const referralEmail = email; // The referral code to match
-    const updateData = { referred_user: addedUser._id }; // The field(s) and value(s) to update
+    const updateData = { referred_user: addedUser.userID }; // The field(s) and value(s) to update
 
     updateDocumentByReferralCode(referralEmail, updateData).then(() => {
         console.log("Update operation completed.");
     });
+
+    // send the user their tremdous gift card
 
     res.status(200).json({
       message: 'User has been added or updated.',
