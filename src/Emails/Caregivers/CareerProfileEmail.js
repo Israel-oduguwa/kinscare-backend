@@ -1,6 +1,6 @@
 import { APIClient, SendEmailRequest, RegionUS } from "customerio-node";
 import { connectToDatabase } from "../../../utils/mongodb.js";
-
+import {generateReferralCode} from '../../../utils/helper.js'
 // Initialize Customer.io API Client
 const customerIO = new APIClient(process.env.CUSTOMERIO_API_KEY, { region: RegionUS });
 
@@ -31,7 +31,10 @@ export const referToEmployer = async (req, res) => {
                 message: "Missing required fields: 'to', 'supervisorName', 'senderName', 'senderEmail', 'organizationName', or 'senderUserID'.",
             });
         }
-
+        
+        // referralLink
+        const referal_code = generateReferralCode(8);
+        const referralLink  = `${process.env.FRONTEND_BASEURL}/refer/employer?referal_code=${referal_code}`
         // Prepare the email request for Customer.io
         const emailRequest = new SendEmailRequest({
             to,
@@ -42,15 +45,17 @@ export const referToEmployer = async (req, res) => {
                 senderEmail,
                 organizationName,
                 senderUserID,
+                referralLink
             },
             identifiers: {
                 email: to, // Ensure the recipient is uniquely identified
             },
         });
-
+        
         // Send the email
         await customerIO.sendEmail(emailRequest);
         console.log(`Referral email sent successfully to: ${to}`);
+
 
         // Success response
         return res.status(200).json({
