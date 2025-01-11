@@ -13,6 +13,9 @@ const customerIO = new APIClient(process.env.CUSTOMERIO_API_KEY, { region: Regio
  * @param {string} payload.referralLink - Unique referral link
  */
 export const referToEmployer = async (req, res) => {
+    // Ensure DB connection is set up once
+    const { db } = await connectToDatabase();
+
     try {
         const {
             to, // Employer's email
@@ -35,6 +38,24 @@ export const referToEmployer = async (req, res) => {
         // referralLink
         const referal_code = generateReferralCode(8);
         const referralLink  = `https://kinscarev2.vercel.app/refer/employer?referal_code=${referal_code}` //${process.env.FRONTEND_BASEURL}
+        
+        // store the referral in the database
+
+        const collection = db.collection("referral"); // Replace with your collection name
+
+        // Document to be inserted
+        const document = {
+            referred_user: "id_pending",
+            referred_by: senderUserID,
+            referral_type: "employer",
+            referral_code: referal_code,
+            referral_email: senderEmail
+        };
+
+        // Insert the document into the collection
+        const result = await collection.insertOne(document);
+
+        
         // Prepare the email request for Customer.io
         const emailRequest = new SendEmailRequest({
             to,
