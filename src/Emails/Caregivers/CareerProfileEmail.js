@@ -37,7 +37,7 @@ export const referToEmployer = async (req, res) => {
         
         // referralLink
         const referal_code = generateReferralCode(8);
-        const referralLink  = `https://kinscarev2.vercel.app/refer/employer?referal_code=${referal_code}` //${process.env.FRONTEND_BASEURL}
+        const referralLink  = `https://kinscarev2.vercel.app/signup?referal_code=${referal_code}` //${process.env.FRONTEND_BASEURL}
         
         // store the referral in the database
 
