@@ -7,6 +7,18 @@ export const isValidZipcode = (zipcode) => {
   return isValidZip.test(zipcode);
 };
 
+export const generateReferralCode = (length = 8) => {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let referralCode = '';
+  
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    referralCode += characters[randomIndex];
+  }
+  
+  return referralCode.toUpperCase(); // Optional: Convert to uppercase for consistency
+}
+
 // Function to get geocode (latitude and longitude) from Google Maps API
 export const getGeocodeAddress = async (zipcode, city) => {
   try {
