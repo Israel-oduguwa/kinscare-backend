@@ -49,13 +49,13 @@ export const referToEmployer = async (req, res) => {
             referred_by: senderUserID,
             referral_type: "employer",
             referral_code: referal_code,
-            referral_email: senderEmail
+            referral_email: to
         };
 
         // Insert the document into the collection
         const result = await collection.insertOne(document);
 
-        
+
         // Prepare the email request for Customer.io
         const emailRequest = new SendEmailRequest({
             to,
